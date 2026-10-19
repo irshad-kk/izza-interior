@@ -34,18 +34,18 @@ export const FOUNDERS: Founder[] = [
     role: "Founder & Principal Director",
     image: "/images/founders/abdul_shareef.jpg",
     bio: "Guiding the architectural vision, execution precision, and bespoke spatial planning that define Izza Interior's signature residences and commercial spaces.",
-    phone: "+91 7907225262",
-    phoneRaw: "+917907225262",
-    whatsappUrl: "https://wa.me/917907225262"
+    phone: "+91 9895449414",
+    phoneRaw: "+919895449414",
+    whatsappUrl: "https://wa.me/919895449414"
   },
   {
     name: "Mohammed Noufal Y",
     role: "Founder & Creative Director",
     image: "/images/founders/mohammed_noufal.jpg",
     bio: "Directing interior concepts, curated materiality, and harmonious living environments tailored with enduring warmth and modern functionality.",
-    phone: "+91 9895449414",
-    phoneRaw: "+919895449414",
-    whatsappUrl: "https://wa.me/919895449414"
+    phone: "+91 7907225262",
+    phoneRaw: "+917907225262",
+    whatsappUrl: "https://wa.me/917907225262"
   }
 ];
 
@@ -54,12 +54,12 @@ export const COMPANY_INFO = {
   name: "Izza Interior",
   tagline: "Interior Architecture & Design",
   location: "Kasaragod, Kerala, India",
-  primaryPhone: "+91 7907225262",
-  primaryPhoneRaw: "+917907225262",
-  altPhone: "+91 9895449414",
-  altPhoneRaw: "+919895449414",
-  whatsappUrl: "https://wa.me/917907225262",
-  altWhatsappUrl: "https://wa.me/919895449414",
+  primaryPhone: "+91 9895449414",
+  primaryPhoneRaw: "+919895449414",
+  altPhone: "+91 7907225262",
+  altPhoneRaw: "+917907225262",
+  whatsappUrl: "https://wa.me/919895449414",
+  altWhatsappUrl: "https://wa.me/917907225262",
   email: "hello@izzainterior.com",
 };
 
