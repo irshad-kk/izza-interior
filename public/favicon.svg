@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" fill="none">
+  <rect width="64" height="64" rx="12" fill="#FAF8F5"/>
+  <!-- Grey square -->
+  <rect x="12" y="10" width="16" height="16" fill="#8C8C8C" rx="1"/>
+  <!-- Red square -->
+  <rect x="20" y="18" width="34" height="34" fill="#EA3A3D" rx="2"/>
+  <!-- Interior text notch / silhouette -->
+  <path d="M26 38h4v8h-4zM34 34h4v12h-4z" fill="#FAF8F5" opacity="0.9"/>
+</svg>
