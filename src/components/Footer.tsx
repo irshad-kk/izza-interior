@@ -27,11 +27,11 @@ export const Footer: React.FC = () => {
           <div className="lg:col-span-5 space-y-4">
             <a
               href="#home"
-              className="inline-block bg-white/95 backdrop-blur-sm p-2 rounded shadow-sm hover:opacity-95 transition-opacity"
+              className="inline-block hover:opacity-90 transition-opacity"
               aria-label="Izza Interior Home"
             >
               <img
-                src="/images/logo.png"
+                src="/images/logo-light-text.png"
                 alt="Izza Interior"
                 className="h-11 sm:h-12 w-auto object-contain"
               />

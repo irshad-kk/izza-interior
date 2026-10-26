@@ -291,13 +291,15 @@ export const CinematicWalkthrough: React.FC = () => {
     };
   }, [renderFrame]);
 
-  // Handle canvas sizing with DPR clamping for high fill-rate
+  // Handle canvas sizing with DPR clamping for high fill-rate and mobile performance
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
 
     const handleResize = () => {
-      const dpr = Math.min(window.devicePixelRatio || 1, 1.5);
+      const isMobile = window.innerWidth < 768;
+      // Clamped to 1.0 on mobile to eliminate GPU fill-rate bottlenecks, 1.5 on desktop
+      const dpr = Math.min(window.devicePixelRatio || 1, isMobile ? 1.0 : 1.5);
       canvas.width = Math.round(window.innerWidth * dpr);
       canvas.height = Math.round(window.innerHeight * dpr);
 
@@ -330,7 +332,7 @@ export const CinematicWalkthrough: React.FC = () => {
       headerOverlayRef.current.style.pointerEvents = op < 0.08 ? 'none' : 'auto';
     }
 
-    // 4. Milestone overlay card visibility
+    // 4. Milestone overlay card visibility (desktop only)
     if (milestoneCardRef.current) {
       const cardOp = Math.min(1, Math.max(0, (progress - 0.12) * 7));
       milestoneCardRef.current.style.opacity = String(cardOp);
@@ -349,45 +351,67 @@ export const CinematicWalkthrough: React.FC = () => {
     }
   }, []);
 
-  // GSAP Tween with ScrollTrigger: Deeply extended scroll distance (+=950%) & silky 1.5s scrub
+  // GSAP Responsive ScrollTrigger with matchMedia: mobile-optimized distance & direct tactile scrub
   useEffect(() => {
     if (!containerRef.current || !viewportRef.current) return;
 
-    renderFrame(1);
-
-    const frameObject = { frame: 1, progress: 0 };
-
-    // GSAP tween smoothly scrubbing frame from 1 to 240 across 9.5 viewport heights (~10,000px)
-    const tween = gsap.to(frameObject, {
-      frame: TOTAL_FRAMES,
-      progress: 1,
-      ease: 'none',
-      scrollTrigger: {
-        trigger: containerRef.current,
-        start: 'top top',
-        end: '+=950%', // Deeply extended, lengthy scroll distance
-        pin: viewportRef.current,
-        pinSpacing: true,
-        scrub: isManualReducedMotion ? 0.1 : 1.5, // 1.5s damped inertia for buttery liquid smoothing
-        anticipatePin: 1,
-        onUpdate: (self) => {
-          updateHUD(self.progress);
-        },
-      },
-      onUpdate: () => {
-        // Called by GSAP's internal 60-120 FPS ticker with floating-point frame value
-        renderFrame(frameObject.frame);
-      },
+    // Prevent mobile address bar show/hide from causing resize jitter
+    ScrollTrigger.config({
+      ignoreMobileResize: true,
+      autoRefreshEvents: 'visibilitychange,DOMContentLoaded,load',
     });
 
-    tweenRef.current = tween;
-    scrollTriggerRef.current = tween.scrollTrigger || null;
+    renderFrame(1);
+
+    const mm = gsap.matchMedia();
+
+    mm.add(
+      {
+        isMobile: '(max-width: 767px)',
+        isDesktop: '(min-width: 768px)',
+      },
+      (context) => {
+        const { isMobile } = (context.conditions || {}) as { isMobile?: boolean };
+
+        const frameObject = { frame: 1, progress: 0 };
+
+        // On mobile: 420% distance (~3-4 natural thumb swipes) & 0.35s immediate tactile scrub
+        // On desktop: 950% distance (~10,000px lengthy journey) & 1.4s luxurious mouse-wheel momentum
+        const tween = gsap.to(frameObject, {
+          frame: TOTAL_FRAMES,
+          progress: 1,
+          ease: 'none',
+          scrollTrigger: {
+            trigger: containerRef.current,
+            start: 'top top',
+            end: isMobile ? '+=420%' : '+=950%',
+            pin: viewportRef.current,
+            pinSpacing: true,
+            scrub: isManualReducedMotion ? 0.1 : isMobile ? 0.35 : 1.4,
+            anticipatePin: 1,
+            onUpdate: (self) => {
+              updateHUD(self.progress);
+            },
+          },
+          onUpdate: () => {
+            renderFrame(frameObject.frame);
+          },
+        });
+
+        tweenRef.current = tween;
+        scrollTriggerRef.current = tween.scrollTrigger || null;
+
+        return () => {
+          if (tween.scrollTrigger) {
+            tween.scrollTrigger.kill();
+          }
+          tween.kill();
+        };
+      }
+    );
 
     return () => {
-      if (tween.scrollTrigger) {
-        tween.scrollTrigger.kill();
-      }
-      tween.kill();
+      mm.revert();
     };
   }, [renderFrame, isManualReducedMotion, updateHUD]);
 
@@ -455,7 +479,7 @@ export const CinematicWalkthrough: React.FC = () => {
       {/* Sticky / Pinned Fullscreen Walkthrough Viewport */}
       <div
         ref={viewportRef}
-        className="w-full h-screen overflow-hidden flex flex-col justify-between relative"
+        className="w-full h-screen h-[100dvh] overflow-hidden flex flex-col justify-between relative"
       >
         {/* HTML5 Canvas Render Layer */}
         <div className="absolute inset-0 z-0 select-none">
@@ -470,25 +494,25 @@ export const CinematicWalkthrough: React.FC = () => {
         </div>
 
         {/* Top Architectural HUD / Milestone Tracker */}
-        <div className="relative z-10 max-w-7xl w-full mx-auto px-6 sm:px-8 lg:px-12 pt-24 sm:pt-28 flex justify-between items-start text-white">
+        <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-8 lg:px-12 pt-20 sm:pt-28 flex justify-between items-start text-white gap-2">
           
           {/* Active Space Identifier Badge */}
-          <div className="flex items-center space-x-3 bg-[#161514]/75 backdrop-blur-md px-4 py-2 border border-white/10 shadow-lg">
-            <span className="w-2 h-2 rounded-full bg-[#C2A676] animate-pulse" />
+          <div className="flex items-center space-x-2.5 bg-[#161514]/75 backdrop-blur-md px-3 sm:px-4 py-1.5 sm:py-2 border border-white/10 shadow-lg max-w-[62%] sm:max-w-none">
+            <span className="w-2 h-2 rounded-full bg-[#C2A676] animate-pulse shrink-0" />
             <span
               ref={spaceBadgeRef}
-              className="text-[11px] sm:text-xs tracking-[0.24em] uppercase font-mono text-white/90"
+              className="text-[10px] sm:text-xs tracking-[0.2em] uppercase font-mono text-white/90 truncate"
             >
               SPACE {currentMilestone.roomNumber} <span className="text-[#C2A676]">&bull;</span> {currentMilestone.title}
             </span>
           </div>
 
           {/* Location & Controls HUD */}
-          <div className="flex items-center space-x-2 sm:space-x-3 text-xs">
+          <div className="flex items-center space-x-2 sm:space-x-3 text-xs shrink-0">
             {/* Auto-Tour Toggle */}
             <button
               onClick={() => setIsAutoTouring(!isAutoTouring)}
-              className={`flex items-center space-x-2 px-3.5 py-1.5 backdrop-blur-md border transition-all duration-300 text-xs ${
+              className={`flex items-center space-x-1.5 sm:space-x-2 px-2.5 sm:px-3.5 py-1.5 backdrop-blur-md border transition-all duration-300 text-xs ${
                 isAutoTouring
                   ? 'bg-[#C2A676] text-black border-[#C2A676] font-medium shadow-[0_0_15px_rgba(194,166,118,0.5)]'
                   : 'bg-[#161514]/70 text-white/80 border-white/15 hover:border-[#C2A676] hover:text-white'
@@ -497,13 +521,13 @@ export const CinematicWalkthrough: React.FC = () => {
             >
               {isAutoTouring ? (
                 <>
-                  <Pause className="w-3.5 h-3.5 text-black" />
-                  <span className="tracking-widest uppercase font-mono text-[11px]">Touring</span>
+                  <Pause className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-black" />
+                  <span className="tracking-widest uppercase font-mono text-[10px] sm:text-[11px]">Touring</span>
                 </>
               ) : (
                 <>
-                  <Play className="w-3.5 h-3.5 text-[#C2A676]" />
-                  <span className="tracking-widest uppercase font-mono text-[11px]">Auto Tour</span>
+                  <Play className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#C2A676]" />
+                  <span className="tracking-widest uppercase font-mono text-[10px] sm:text-[11px]">Auto Tour</span>
                 </>
               )}
             </button>
@@ -567,10 +591,10 @@ export const CinematicWalkthrough: React.FC = () => {
         </div>
 
         {/* Bottom Bar: Interactive Scroll Tracker & Milestone Badges */}
-        <div className="relative z-10 max-w-7xl w-full mx-auto px-6 sm:px-8 lg:px-12 pb-8 sm:pb-10 pr-20 md:pr-44 xl:pr-48 text-white flex flex-col justify-end space-y-4">
+        <div className="relative z-10 max-w-7xl w-full mx-auto px-4 sm:px-8 lg:px-12 pb-6 sm:pb-10 pr-16 md:pr-44 xl:pr-48 text-white flex flex-col justify-end space-y-3 sm:space-y-4">
           
           {/* Progress Timeline Scrubber Bar with Gold Glow */}
-          <div className="relative w-full h-[4px] bg-white/20 rounded-full overflow-hidden shadow-inner">
+          <div className="relative w-full h-[3px] sm:h-[4px] bg-white/20 rounded-full overflow-hidden shadow-inner">
             <div
               ref={progressBarRef}
               className="absolute top-0 left-0 bottom-0 bg-gradient-to-r from-[#A88B58] via-[#C2A676] to-[#E5D7B7] shadow-[0_0_10px_rgba(194,166,118,0.7)]"
@@ -578,13 +602,13 @@ export const CinematicWalkthrough: React.FC = () => {
             />
           </div>
 
-          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
+          <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-2.5 sm:gap-3">
             {/* Scroll Indicator */}
-            <div className="flex items-center space-x-3 text-xs tracking-[0.22em] uppercase text-white/80 font-sans">
-              <span className="inline-block w-6 h-[1px] bg-[#C2A676]" />
+            <div className="flex items-center space-x-2 sm:space-x-3 text-[11px] sm:text-xs tracking-[0.18em] sm:tracking-[0.22em] uppercase text-white/80 font-sans">
+              <span className="inline-block w-4 sm:w-6 h-[1px] bg-[#C2A676]" />
               <span>Scroll to Walk Through ({activeMilestoneIndex + 1} of {ROOM_MILESTONES.length} Spaces)</span>
-              <div className="w-6 h-6 rounded-full border border-white/20 flex items-center justify-center animate-bounce ml-1">
-                <ChevronDown className="w-3.5 h-3.5 text-[#C2A676]" />
+              <div className="w-5 h-5 sm:w-6 sm:h-6 rounded-full border border-white/20 flex items-center justify-center animate-bounce ml-1">
+                <ChevronDown className="w-3 sm:w-3.5 h-3 sm:h-3.5 text-[#C2A676]" />
               </div>
             </div>
 

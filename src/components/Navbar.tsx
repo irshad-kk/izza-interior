@@ -43,15 +43,9 @@ export const Navbar: React.FC = () => {
           className="group flex items-center focus:outline-none"
           aria-label="Izza Interior Home"
         >
-          <div
-            className={`transition-all duration-300 rounded-sm p-1.5 flex items-center ${
-              isScrolled
-                ? 'bg-transparent'
-                : 'bg-white/95 backdrop-blur-md shadow-sm ring-1 ring-black/5'
-            }`}
-          >
+          <div className="transition-all duration-300 flex items-center">
             <img
-              src={isScrolled ? '/images/logo-transparent.png' : '/images/logo.png'}
+              src={isScrolled ? '/images/logo-transparent.png' : '/images/logo-light-text.png'}
               alt="Izza Interior"
               className="h-9 sm:h-11 w-auto object-contain transition-transform duration-300 group-hover:scale-[1.02]"
             />
